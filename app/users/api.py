@@ -11,14 +11,16 @@ def init_api(app):
         :return: json
         """
         email = request.form.get('email')
-        username = request.form.get('username')
-        password = request.form.get('password')
-
-        if username is None:
+        username = request.form.get('username').strip()
+        password = request.form.get('password').strip()
+        if username is None or username == "" or username == "null":
             return jsonify(common.falseReturn('', '账号不能为空!'))
-        if password is None:
+        if password is None or password == "" or password == "null":
             return jsonify(common.falseReturn('', '密码不能为空!'))
-
+        if not(username.isalnum()) or is_Chinese(username):
+            return jsonify(common.falseReturn('', '账号只能是字母或数字组成!'))
+        if not(password.isalnum()) or is_Chinese(username):
+            return jsonify(common.falseReturn('', '密码只能是字母或数字组成!'))
         # 最后一条记录及其ID
         lastUserRecord = Users.query.order_by('-id').first()
         if (lastUserRecord is None):
@@ -26,9 +28,11 @@ def init_api(app):
         else:
             newRecordId = lastUserRecord.id + 1
 
-        user = Users(id=newRecordId, email=email, username=username, password=Users.set_password(Users, password))
-        Users.add(Users, user)
-
+        user = Users(id=None, email=email, username=username, password=Users.set_password(Users, password))
+        if (Users.getUsername(Users, user.username)):
+            return jsonify(common.falseReturn('', '用户已存在')) 
+        else:
+            Users.add(Users, user)
         userInfo = Users.get(Users, user.id)
         if userInfo:
             returnUser = {
@@ -41,7 +45,12 @@ def init_api(app):
         else:
             return jsonify(common.falseReturn('', '用户注册失败'))
 
-
+    def is_Chinese(word):
+        for ch in word:
+            if '\u4e00' <= ch <= '\u9fff':
+                return True
+        return False
+	
     @app.route('/login', methods=['POST'])
     def login():
         """

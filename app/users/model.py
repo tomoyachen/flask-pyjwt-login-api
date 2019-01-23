@@ -29,6 +29,9 @@ class Users(db.Model):
     def get(self, id):
         return self.query.filter_by(id=id).first()
 
+    def getUsername(self, username):
+        return self.query.filter_by(username=username).first()
+
     def add(self, user):
         db.session.add(user)
         return session_commit()
